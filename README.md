@@ -217,12 +217,12 @@ git push
 
 Check the "Actions" tab on the GitHub page for your repository.
 
-# TODO add image
+![Client and server test jobs running in parallel](docs/client-server-test.png)
 
 ## End-to-end (E2E) test
 
 Now that we have tested both the client and server.
-We might also to test them together, making sure the entire application stack
+We test that they work together, making sure the entire application stack
 behaves as expected.
 
 This tutorial won't go into details on how to write E2E tests.
@@ -232,9 +232,8 @@ The brief version of how this works, is that we spin up the entire stack
 (frontend, server and database).
 Then a tool named [Playwright](https://playwright.dev/) is used to control a
 web browser interacting with the application.
-This browser interaction is written using a high-level API in JavaScript or
+This browser interaction is scripted using a high-level API in JavaScript or
 TypeScript.
-Tests are structured similar to other tests in the JavaScript ecosystem.
 
 In the `.github/workflows/ci.yml` file append following to the end:
 
@@ -267,26 +266,27 @@ _Check the level of indentation_
 That was a huge chunk.
 Let's break it down piece by piece.
 
-What you appended is just another job definition.
-Like `client_test_job` and `server_test_job`.
+What you appended is just another job definition, like `client_test_job` and
+`server_test_job`.
 
 The first new thing in this job is the `needs: [client_test_job,
 server_test_job]` part.
 It makes execution of the job depend on the two other jobs to have successfully
-been completed, before it starts.
-Regardless of whether you actually want to postpone your E2E-test to after all
-unit-tests have completed is somewhat situational.
+been completed.
+
+Whether you actually want to postpone your E2E-test to after all unit-tests
+have completed is somewhat situational.
 If your unit-tests covers almost all code and are very likely to catch any
 potential bugs, then it can be a good idea to postpone E2E-tests to after they
 have completed.
-However, if your E2E-test are just as likely to catch bugs compared to your
+However, if your E2E-tests are just as likely to catch bugs compared to your
 unit-tests, then you might want to run everything in parallel.
 
 In general, you probably want to try and keep you minutes count for executing
 your workflow low.
 Each job gets executed on its own runner.
-It is the combined execution time for all runners (rounded to the nearest whole
-minute) that counts towards your spending.
+It is the combined execution time for all runners that counts towards your
+spending.
 Also, it is slightly more eco-friendly not having computers waste unnecessary
 energy.
 
@@ -333,9 +333,9 @@ Next:
 
 This is a perfect example on how we can name steps to make the workflow easier
 to understand.
-Playwright depends on various web browsers being installed such that it can use
-them to execute tests.
-This command simply to install those browsers.
+Playwright depends on various web browsers being installed, such that it can
+use them to execute tests.
+The command above simply installs those browsers.
 
 Final:
 
@@ -352,11 +352,11 @@ The actual command that will be run with `e2e` alias is `npx playwright test
 It simply means "execute playwright tests using chromium as the web browser".
 [Chromium](https://www.chromium.org/Home/) is the open source base which Google
 Chrome is build from.
-It should ensure that the web application works in Chrome and Microsoft Edge is
-also build from Chromium.
+It should ensure that the web application works in Chrome.
+Btw, Microsoft Edge, Opera and Vivaldi is also built from Chromium.
 
-It is also possible run tests with `firefox` and `webkit`, which is what Safari
-is build upon.
+It is also possible run tests with `firefox` and `webkit` (which is what Safari
+is build upon).
 
 Checkout [Comparison of browser
 engines](https://en.wikipedia.org/wiki/Comparison_of_browser_engines) for an
@@ -380,7 +380,7 @@ See if you can come up with a descriptive commit message for your changes.
 Then navigate to "Actions" tab on GitHub page for your repository and observe
 the visual representation of the jobs in your workflow.
 
-TODO image of job diagram.
+![E2E test job runs after the other jobs](docs/e2e-test.png)
 
 ## Optimize with dependency caching
 
@@ -388,7 +388,7 @@ Each job will run in an ephemeral environment that gets discarded afterward.
 It means that each time a job is run it gets a fresh environment.
 This is great for reproducibility, since nothing from previous run will affect
 the execution of the next job.
-However, it means that a job needs to configure its environment each time.
+However, it also means that a job needs to configure its environment each time.
 With configure, I mean run things like `actions/checkout`,
 `actions/setup-node`, `npm clean-install` etc.
 It all takes time.
@@ -401,7 +401,7 @@ The cache is stored in `_cacache` sub-folder of the path that is outputted when
 you run `npm config get cache`.
 
 On GitHub however, the cache for **npm** is empty each time a job in your
-workflow starts because it gets a fresh environment.
+workflow starts, because it gets a fresh environment.
 It means that it has to download everything from scratch each time.
 GitHub Actions have its own general purpose cache that can be used to speed up
 the download.
@@ -450,7 +450,7 @@ Then spot the lines that have to do with caching in the workflow run logs.
 There should be some lines about it both in the beginning and the end of the
 job log.
 
-TODO image
+![Log output for upload of npm cache](docs/cache-log.png)
 
 ## Challenge
 
@@ -459,6 +459,12 @@ at the documentation for
 [setup-dotnet](https://github.com/actions/setup-dotnet).
 
 _Hint: your need to add an option to `PropertyGroup` of your `*.csproj` files._
+
+You might also have noticed that "Install browsers" job takes a long time.
+Inspecting the log, it seems like it uses `/home/runner/.cache/ms-playwright`
+for local download cache.
+See if you can find out how to persist the cache using [Cache
+action](https://github.com/actions/cache).
 
 ## Closing thoughts
 
