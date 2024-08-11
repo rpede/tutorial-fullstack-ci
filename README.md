@@ -185,8 +185,8 @@ A timeout is the max amount of time a job can run before it gets cancelled.
 
 I think it is generally a good idea to set a timeout for each job, just in case
 it goes rouge and never stops.
-The reason is that have a limited amount of minutes each month depending on
-your billing plan.
+The reason is that your have a limited amount of minutes each month depending
+on your billing plan.
 You likely don't have to worry too much about it though.
 Since there is a decent amount of minutes already included even on the free
 plan.
