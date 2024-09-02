@@ -222,7 +222,7 @@ Check the "Actions" tab on the GitHub page for your repository.
 ## End-to-end (E2E) test
 
 Now that we have tested both the client and server.
-We test that they work together, making sure the entire application stack
+We should test that they work together, making sure the entire application stack
 behaves as expected.
 
 This tutorial won't go into details on how to write E2E tests.
