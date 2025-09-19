@@ -133,8 +133,8 @@ Tutorial](https://github.com/rpede/tutorial-react-ci/blob/main/README.md).
 In this section we will modify `server_test_job` to execute test for the
 server/backend.
 
-The overall process is very similar to how we do it for the client/frontend,
-though the actual commands differ.
+The overall process is very similar to how we do it for the frontend, tho the
+actual commands are different.
 
 The `dotnet` command also operates on files from the point of view of the
 current working directory.
@@ -147,14 +147,14 @@ While others operate on a project (`*.csproj`) file.
 To read more about the `dotnet` sub-commands, check out [.NET CLI
 overview](https://learn.microsoft.com/en-us/dotnet/core/tools/).
 
-In this repository you will find the solution at the root level.
+In this repository you will find the solution (`.sln` file) at the root level.
 Which is convenient since it means that we don't have to append any extra
 parameters to the commands.
 
-To build a .NET solution, we use `dotnet build`
-We use `dotnet test` to (drum roll) run tests.
+We use `dotnet build` to build a .NET solution.
+And we use `dotnet test` to (drum roll) run tests.
 
-There are a pre-made action that we can use to set up a specific version of
+There is a pre-made action that we can use to set up a specific version of
 .NET, just like there is for Node.js.
 
 Combined it becomes:
@@ -176,6 +176,8 @@ _Make sure it is indented correctly._
 Semantic versioning is used to specify a version of .NET.
 With `dotnet-version: "8.0.x"` we specify that we want the latest patch-release
 of .NET version 8.0.
+
+_.NET 8.0 was the newest version when this guide was originally made._
 
 ## See it in "Action"
 
@@ -202,8 +204,9 @@ timeout-minutes: 15
 
 _Make sure it is indented correctly._
 
-Full [ci.yml](https://gist.github.com/rpede/159739db372665b2dd4709a5d5517a15)
-for reference.
+See the full
+[ci.yml](https://gist.github.com/rpede/159739db372665b2dd4709a5d5517a15) for
+reference.
 
 Stage, review, commit and push your changes.
 
@@ -226,16 +229,23 @@ We should test that they work together, making sure the entire application stack
 behaves as expected.
 
 This tutorial won't go into details on how to write E2E tests.
-Since the goal is just to show how to use jobs in a GitHub Actions workflow.
+Since the goal is just to show you how to use jobs in a GitHub Actions
+workflow.
 
 The brief version of how this works, is that we spin up the entire stack
 (frontend, server and database).
 Then a tool named [Playwright](https://playwright.dev/) is used to control a
-web browser interacting with the application.
-This browser interaction is scripted using a high-level API in JavaScript or
-TypeScript.
+web browser that interacts with the application.
+This browser interaction can be scripted using a high-level API in JavaScript
+or TypeScript.
 
-In the `.github/workflows/ci.yml` file append following to the end:
+You can see an example of a Playwright test
+[here](https://gist.github.com/rpede/3fe32e67807590c469440a2320a52aec) if you
+are curious.
+
+The project already contains a playwright test.
+To set up and execute the playwright test, append the following to the end of
+`.github/workflows/ci.yml`.
 
 ```yml
 e2e_test_job:
@@ -276,19 +286,31 @@ been completed.
 
 Whether you actually want to postpone your E2E-test to after all unit-tests
 have completed is somewhat situational.
-If your unit-tests covers almost all code and are very likely to catch any
+If your unit-test suite covers almost all code and are very likely to catch any
 potential bugs, then it can be a good idea to postpone E2E-tests to after they
 have completed.
 However, if your E2E-tests are just as likely to catch bugs compared to your
-unit-tests, then you might want to run everything in parallel.
+unit-tests, then you might want to run both in parallel.
 
-In general, you probably want to try and keep you minutes count for executing
-your workflow low.
+In general, you probably want to try to keep you minutes count for executing
+the whole workflow low.
 Each job gets executed on its own runner.
 It is the combined execution time for all runners that counts towards your
 spending.
 Also, it is slightly more eco-friendly not having computers waste unnecessary
 energy.
+
+First we have:
+
+```yml
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with:
+    node-version: "22"
+```
+
+It does a git clone/checkout of the code.
+Then set up the specified version of node.
 
 Next, we have:
 
@@ -298,10 +320,12 @@ Next, we have:
 
 The `setup-buildx-action` makes docker available.
 It is called something with build, because it is intended to provide an
-environment for us to build Docker images.
-We are going to use it to spin up a database for the tests instead.
-An alternative way to start a database in a container for testing is with
-something called [Testcontainers](https://testcontainers.com/).
+environment for building Docker images.
+But we are just going to use it to spin up a database for the tests instead.
+
+> [!TIP]
+> An alternative way to start a database in a container for testing is with
+> something called [Testcontainers](https://testcontainers.com/).
 
 Then we have:
 
@@ -310,9 +334,7 @@ Then we have:
   run: docker compose up -d --wait
 ```
 
-Start the services our application needs in Docker containers.
-More on what Docker containers are and the `docker compose` command in a
-different tutorial.
+It starts the services (Docker containers) needed by our application.
 
 Next:
 
@@ -344,52 +366,57 @@ Final:
   run: npm run e2e --prefix=client
 ```
 
-It simply runs the E2E tests.
+Here we are simply running the E2E tests.
+
 Well, actually `e2e` is an alias for a different command found under the
 `scripts` section in `client/package.json`.
-The actual command that will be run with `e2e` alias is `npx playwright test
---project chromium`.
+The actual command that will be run with the `e2e` alias is `npx playwright
+test --project chromium`.
 It simply means "execute playwright tests using chromium as the web browser".
-[Chromium](https://www.chromium.org/Home/) is the open source base which Google
-Chrome is build from.
-It should ensure that the web application works in Chrome.
-Btw, Microsoft Edge, Opera and Vivaldi is also built from Chromium.
 
-It is also possible run tests with `firefox` and `webkit` (which is what Safari
-is build upon).
+> [!TIP]
+> [Chromium](https://www.chromium.org/Home/) is the open source base which Google
+> Chrome is build from.
+> It should ensure that the web application works in Chrome.
+> Btw: Edge, Opera and Vivaldi are also based on Chromium in some way.
+>
+> It is also possible run tests with `firefox` and `webkit`.
+> Safari is build on webkit.
+>
+> Checkout [Comparison of browser
+> engines](https://en.wikipedia.org/wiki/Comparison_of_browser_engines) for an
+> overview.
+> It basically boils down to everything except Gecko (engine in Firefox) being a
+> fork of [KHTML](https://en.wikipedia.org/wiki/KHTML).
+>
+> Anyway, that is just a fun little piece of history and not really too important
+> as long as our application just works in most browsers.
 
-Checkout [Comparison of browser
-engines](https://en.wikipedia.org/wiki/Comparison_of_browser_engines) for an
-overview.
-It basically boils down to everything except Gecko (engine in Firefox) being a
-fork of [KHTML](https://en.wikipedia.org/wiki/KHTML).
-Anyway, that is just a fun little piece of history and not really too important
-as long as our application just works in most browsers.
-
-At the end, we shutdown the containers with:
+At the end, we stop the containers with:
 
 ```yml
 - name: Stop services
   run: docker compose down
 ```
 
-Enough rambling for now.
-
 Commit and push your work!
 See if you can come up with a descriptive commit message for your changes.
-Then navigate to "Actions" tab on GitHub page for your repository and observe
-the visual representation of the jobs in your workflow.
+
+After you have pushed your changes, navigate to "Actions" tab on GitHub page
+for your repository and observe the visual representation of the jobs in your
+workflow.
 
 ![E2E test job runs after the other jobs](docs/e2e-test.png)
 
 ## Optimize with dependency caching
 
-Each job will run in an ephemeral environment that gets discarded afterward.
-It means that each time a job is run it gets a fresh environment.
+Each job will run in an ephemeral environment that is discarded after
+completion.
+It means that each time a job is run - it gets a fresh environment.
 This is great for reproducibility, since nothing from previous run will affect
 the execution of the next job.
 However, it also means that a job needs to configure its environment each time.
-With configure, I mean run things like `actions/checkout`,
+With configure, I mean to run things like `actions/checkout`,
 `actions/setup-node`, `npm clean-install` etc.
 It all takes time.
 Especially `npm clean-install` can take some time as it downloads all
@@ -401,31 +428,37 @@ The cache is stored in `_cacache` sub-folder of the path that is outputted when
 you run `npm config get cache`.
 
 On GitHub however, the cache for **npm** is empty each time a job in your
-workflow starts, because it gets a fresh environment.
-It means that it has to download everything from scratch each time.
+workflow starts.
+It is because jobs run in an ephemeral environment.
+It also means that the job has to download everything from scratch each time.
+
 GitHub Actions have its own general purpose cache that can be used to speed up
 the download.
-
-The way GitHub Actions cache works, is that it compress and uploads files from
-one or more paths to a storage location shared between jobs.
-This happens at the end of job execution.
-The compressed files are stored under a cache-key.
+The cache allows you to store files between jobs.
+The files are stored in the cache under a cache-key.
 Next time the job runs, it will attempt to fetch and extract the files stored
 under the cache-key.
-You can think of it as a giant persisting hash-map that is shared between jobs.
-A checksum of the file specifying the dependencies is often used as cache-key.
-That way, having different dependencies will make it use a different cache-key.
-See [Caching dependencies to speed up
-workflows](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/caching-dependencies-to-speed-up-workflows)
-for more information.
 
-A different way to store files between jobs is as artifacts.
-See [Storing workflow data as
-artifacts](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/storing-workflow-data-as-artifacts).
-You should at least read the section comparing artifacts to caching.
+You can think of the cache as a giant persisting hash-map that is shared
+between jobs.
+A checksum of the file specifying the dependencies is often used as cache-key.
+That way, a different set dependencies will have different cache-key.
+
+> [!TIP]
+> See [Caching dependencies to speed up
+> workflows](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/caching-dependencies-to-speed-up-workflows)
+> for more information.
+
+> [!TIP]
+> A different way to store files between jobs is as something called artifacts.
+> See [Storing workflow data as
+> artifacts](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/storing-workflow-data-as-artifacts)
+> for information.
+>
+> You should at least read the section comparing artifacts to caching.
 
 Using caching to speed up `npm clean-install` in your workflow is pretty easy.
-All you need to do is to replace:
+All you need to do is to replace these lines:
 
 ```yml
 - uses: actions/setup-node@v4
@@ -433,7 +466,7 @@ All you need to do is to replace:
     node-version: "22"
 ```
 
-With:
+With these lines:
 
 ```yml
 - uses: actions/setup-node@v4
@@ -446,11 +479,17 @@ With:
 Commit and push your changes.
 
 Go to "Actions" tab on GitHub page for your repository.
-Then spot the lines that have to do with caching in the workflow run logs.
+See if you can spot the lines that have to do with caching in the workflow run
+logs.
 There should be some lines about it both in the beginning and the end of the
 job log.
 
 ![Log output for upload of npm cache](docs/cache-log.png)
+
+> [!NOTE]
+> First time the workflow runs after adding `cache-dependency-path` you will
+> see `npm cache is not found`.
+> "Re-run" the jobs from github page then it should look like the screenshot.
 
 ## Challenge
 
@@ -469,15 +508,18 @@ action](https://github.com/actions/cache).
 ## Closing thoughts
 
 The workflow you've built here isn't meant to be a one-size fits all for
-testing, since the nuances of testing strategies will differ between
-organizations and projects.
+testing.
+Testing strategies will differ between organizations and projects.
 
 In broad terms, a solid testing strategy will look like this:
 
 ![Pyramid of unit, integration and E2E tests](./docs/testing-pyramid.drawio.svg)
 
-Also, as seen in the [React CI
-Tutorial](https://github.com/rpede/tutorial-react-ci), it would be really nice
+_A bit of manual testing, decent amount of e2e and a lot of integration+unit
+testing._
+
+Also - as seen in the [React CI
+Tutorial](https://github.com/rpede/tutorial-react-ci) - it would be really nice
 to make test-reports available on pull-requests.
 Reports have been omitted in this tutorial.
 For a real world project you would also want to generate and present
